@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import { log } from "@graphprotocol/graph-ts"
 import {
   bayc,
   Approval,
@@ -6,30 +6,22 @@ import {
   OwnershipTransferred,
   Transfer
 } from "../generated/bayc/bayc"
-import { ExampleEntity } from "../generated/schema"
+import { 
+  Approval as ApprovalSchema,
+  Transfer as TransferSchema,
+  ApprovalForAll as ApprovalForAllSchema,
+  OwnershipTransferred as OwnershipTransferredSchema,
+ } from "../generated/schema"
 
 export function handleApproval(event: Approval): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
-
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (entity == null) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
-  }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
+  log.info('Message to be displayed: {}, {}', [
+    event.params.owner.toHex(),
+    'HandleApproval',
+  ])
+  let entity = new ApprovalSchema(event.transaction.hash.toHex() + "-" + event.logIndex.toString())
   entity.owner = event.params.owner
   entity.approved = event.params.approved
-
-  // Entities can be written to the store with `.save()`
+  entity.tokenId = event.params.tokenId;
   entity.save()
 
   // Note: If a handler doesn't require existing field values, it is faster
@@ -70,8 +62,37 @@ export function handleApproval(event: Approval): void {
   // - contract.totalSupply(...)
 }
 
-export function handleApprovalForAll(event: ApprovalForAll): void {}
+export function handleApprovalForAll(event: ApprovalForAll): void {
+  log.info('Message to be displayed: {}, {}', [
+    event.params.owner.toHex(),
+    'HandleApprovalForAll',
+  ])
+  let entity = new ApprovalForAllSchema(event.transaction.hash.toHex() + "-" + event.logIndex.toString())
+  entity.approved = event.params.approved
+  entity.operator = event.params.operator
+  entity.owner = event.params.owner
+  entity.save()
+}
 
-export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
+export function handleOwnershipTransferred(event: OwnershipTransferred): void {
+  log.info('Message to be displayed: {}, {}', [
+    event.params.newOwner.toHex(),
+    'handleOwnershipTransferred',
+  ])
+  let entity = new OwnershipTransferredSchema(event.transaction.hash.toHex() + "-" + event.logIndex.toString())
+  entity.newOwner = event.params.newOwner
+  entity.previousOwner = event.params.previousOwner
+  entity.save()
+}
 
-export function handleTransfer(event: Transfer): void {}
+export function handleTransfer(event: Transfer): void {
+  log.info('Message to be displayed: {}, {}', [
+    event.params.from.toHex(),
+    'handleTransfer',
+  ])
+  let entity = new TransferSchema(event.transaction.hash.toHex() + "-" + event.logIndex.toString())
+  entity.from = event.params.from
+  entity.to = event.params.to
+  entity.tokenId = event.params.tokenId
+  entity.save()
+}
